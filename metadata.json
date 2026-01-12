@@ -1,0 +1,5 @@
+{
+  "name": "Yearly - AI Calendar Studio",
+  "description": "A beautiful, AI-powered calendar generator. Upload 12 photos, automatically generate poetic captions using Gemini AI, customize styles, and export high-resolution monthly calendar cards.",
+  "requestFramePermissions": []
+}
