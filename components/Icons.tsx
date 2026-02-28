@@ -1,5 +1,5 @@
 import React from 'react';
-import { LucideProps, Upload, ChevronLeft, ChevronRight, Wand2, Download, Image as ImageIcon, RotateCcw, Palette, Layout, Type, Sparkles } from 'lucide-react';
+import { LucideProps, Upload, ChevronLeft, ChevronRight, Wand2, Download, Image as ImageIcon, RotateCcw, Palette, Layout, Type } from 'lucide-react';
 
 export const UploadIcon = (props: LucideProps) => <Upload {...props} />;
 export const LeftIcon = (props: LucideProps) => <ChevronLeft {...props} />;
@@ -11,4 +11,3 @@ export const ResetIcon = (props: LucideProps) => <RotateCcw {...props} />;
 export const PaletteIcon = (props: LucideProps) => <Palette {...props} />;
 export const LayoutIcon = (props: LucideProps) => <Layout {...props} />;
 export const TextIcon = (props: LucideProps) => <Type {...props} />;
-export const SparklesIcon = (props: LucideProps) => <Sparkles {...props} />;

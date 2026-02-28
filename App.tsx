@@ -1,12 +1,12 @@
-import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef } from 'react';
 import { MONTHS_LIST, MonthData, CalendarTheme, FilterType } from './types';
-import { generateAllCaptions, generateCalendarCaption, remixImageWithAI } from './services/geminiService';
+import { generateAllCaptions, generateCalendarCaption } from './services/geminiService';
 import CalendarView from './components/CalendarView';
 import SvgFilters from './components/SvgFilters';
 import { readFileAsBase64, downloadCalendarAsImage } from './utils/imageUtils';
 import { 
   UploadIcon, LeftIcon, RightIcon, MagicIcon, DownloadIcon, 
-  ImageIconIcon, ResetIcon, PaletteIcon, LayoutIcon, SparklesIcon
+  ImageIconIcon, ResetIcon, PaletteIcon, LayoutIcon 
 } from './components/Icons';
 
 // Initial Data
@@ -19,40 +19,13 @@ const INITIAL_DATA: MonthData[] = MONTHS_LIST.map((name, index) => ({
 }));
 
 export default function App() {
-  const [hasApiKey, setHasApiKey] = useState(false);
   const [months, setMonths] = useState<MonthData[]>(INITIAL_DATA);
   const [currentMonthIdx, setCurrentMonthIdx] = useState(0);
   const [theme, setTheme] = useState<CalendarTheme>(CalendarTheme.MINIMAL);
   const [primaryColor, setPrimaryColor] = useState('#2C2C2C');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [isRemixing, setIsRemixing] = useState(false);
-  const [remixPrompt, setRemixPrompt] = useState('');
-  
   const calendarRef = useRef<HTMLDivElement>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-
-  // --- API Key Check ---
-  useEffect(() => {
-    const checkKey = async () => {
-      // @ts-ignore
-      if (window.aistudio) {
-        // @ts-ignore
-        const hasKey = await window.aistudio.hasSelectedApiKey();
-        setHasApiKey(hasKey);
-      }
-    };
-    checkKey();
-  }, []);
-
-  const handleConnect = async () => {
-    // @ts-ignore
-    if (window.aistudio) {
-      // @ts-ignore
-      await window.aistudio.openSelectKey();
-      // Assume success after interaction to avoid race conditions
-      setHasApiKey(true);
-    }
-  };
 
   // --- Handlers ---
 
@@ -87,8 +60,16 @@ export default function App() {
   };
 
   const handleMagicFill = async () => {
+    if (!process.env.API_KEY) {
+      alert("Please configure your API_KEY to use AI features.");
+      return;
+    }
+
     const currentData = months[currentMonthIdx];
-    if (!currentData.image) return;
+    if (!currentData.image) {
+      alert("Upload an image for this month first!");
+      return;
+    }
 
     setIsProcessing(true);
     try {
@@ -100,6 +81,11 @@ export default function App() {
   };
 
   const handleMagicFillAll = async () => {
+    if (!process.env.API_KEY) {
+      alert("Please configure your API_KEY to use AI features.");
+      return;
+    }
+    
     // Check if any images exist
     const hasImages = months.some(m => m.image);
     if (!hasImages) {
@@ -122,28 +108,9 @@ export default function App() {
     }
   };
 
-  const handleRemixImage = async () => {
-    const currentData = months[currentMonthIdx];
-    if (!currentData.image || !remixPrompt.trim()) return;
-
-    setIsRemixing(true);
-    try {
-      const base64Clean = currentData.image.split(',')[1];
-      const newImage = await remixImageWithAI(base64Clean, remixPrompt);
-      if (newImage) {
-        updateMonth(currentMonthIdx, { image: newImage });
-        setRemixPrompt(''); // Clear prompt on success
-      }
-    } catch (e) {
-      alert("Failed to remix image. Please try a different prompt or check API limits.");
-    } finally {
-      setIsRemixing(false);
-    }
-  };
-
   const handleDownload = () => {
     if (calendarRef.current) {
-      downloadCalendarAsImage(calendarRef.current, `Calendar-${months[currentMonthIdx].name}-2025`);
+      downloadCalendarAsImage(calendarRef.current, `Calendar-${months[currentMonthIdx].name}-2026`);
     }
   };
 
@@ -153,8 +120,10 @@ export default function App() {
 
 
   // --- Render Helpers ---
+
   const currentMonth = months[currentMonthIdx];
 
+  // Helper to get color swatch for filter preview
   const getFilterPreviewColor = (type: FilterType) => {
     switch (type) {
       case FilterType.RISO_VIOLET_MINT: return 'linear-gradient(135deg, #d1fae5 50%, #4c1d95 50%)';
@@ -182,11 +151,15 @@ export default function App() {
       default: return 'None';
     }
   };
-  
+
+  // Helper to map filter to simple background for preview grid
   const getPreviewFilterStyle = (filter: FilterType) => {
+    // We map the filter ID roughly for the small preview
     switch (filter) {
       case FilterType.RISO_VIOLET_MINT: return { filter: 'url(#ink-violet)', backgroundColor: '#d1fae5', mixBlendMode: 'multiply' };
       case FilterType.RISO_RED_BLUE: return { filter: 'url(#ink-red)', backgroundColor: '#e0f2fe', mixBlendMode: 'multiply' };
+      // ... others are approximate or complex to render in small div without full context, 
+      // but let's try to apply the filter ID directly as it handles the color mapping
       case FilterType.RISO_BLUE_CREAM: return { filter: 'url(#ink-blue)', backgroundColor: '#fef3c7', mixBlendMode: 'multiply' };
       case FilterType.RISO_BLACK_YELLOW: return { filter: 'url(#ink-black)', backgroundColor: '#fde047', mixBlendMode: 'multiply' };
       case FilterType.DUOTONE_SUNSET: return { filter: 'url(#duotone-sunset)' };
@@ -197,37 +170,15 @@ export default function App() {
     }
   };
 
-  // --- Landing Screen for API Key ---
-  if (!hasApiKey) {
-    return (
-      <div className="min-h-screen bg-gray-50 flex flex-col items-center justify-center p-6 text-center">
-        <div className="max-w-md w-full bg-white shadow-2xl rounded-2xl p-10">
-          <h1 className="text-4xl font-serif font-bold text-charcoal mb-4">Yearly</h1>
-          <p className="text-gray-500 mb-8">
-            Create beautiful, AI-powered calendars using the latest Gemini models.
-          </p>
-          <div className="space-y-4">
-             <button
-              onClick={handleConnect}
-              className="w-full bg-blue-600 hover:bg-blue-700 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2"
-            >
-               Connect Google AI
-            </button>
-            <p className="text-xs text-gray-400">
-               Access to <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" className="underline hover:text-blue-500">paid Gemini models</a> is required for image generation.
-            </p>
-          </div>
-        </div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#F0F0F0] text-gray-800 font-sans flex flex-col md:flex-row overflow-hidden">
+      {/* Inject SVG Filters */}
       <SvgFilters />
 
       {/* LEFT SIDEBAR: Controls & Grid */}
       <aside className="w-full md:w-[400px] bg-white border-r border-gray-200 flex flex-col h-screen z-20 shadow-xl">
+        
+        {/* Header */}
         <div className="p-6 border-b border-gray-100">
           <h1 className="text-2xl font-serif font-bold text-charcoal tracking-tight flex items-center gap-2">
             <span className="text-3xl">✦</span> Yearly
@@ -235,7 +186,9 @@ export default function App() {
           <p className="text-xs text-gray-500 mt-1 uppercase tracking-widest">AI Calendar Studio</p>
         </div>
 
+        {/* Scrollable Content */}
         <div className="flex-1 overflow-y-auto p-6 space-y-8 no-scrollbar">
+          
           {/* 1. Theme Selection */}
           <section>
             <h3 className="text-xs font-bold text-gray-400 uppercase tracking-widest mb-4 flex items-center gap-2">
@@ -289,10 +242,13 @@ export default function App() {
                 <span className="animate-pulse">Thinking...</span>
               ) : (
                 <>
-                  <MagicIcon size={16} /> Auto-Caption All
+                  <MagicIcon size={16} /> Generate All Captions
                 </>
               )}
             </button>
+            <p className="text-[10px] text-gray-400 mt-2 text-center leading-tight">
+              Gemini AI will analyze your photos and write poetic quotes for the whole year.
+            </p>
           </section>
 
           {/* 4. Month Grid Navigation */}
@@ -342,6 +298,8 @@ export default function App() {
                       </div>
                     )}
                   </div>
+                  
+                  {/* Active Indicator */}
                   {currentMonthIdx === idx && (
                     <div className="absolute inset-0 z-10 bg-black/10 flex items-center justify-center">
                       <div className="w-2 h-2 bg-white rounded-full shadow-sm"></div>
@@ -351,6 +309,7 @@ export default function App() {
               ))}
             </div>
           </section>
+
         </div>
       </aside>
 
@@ -397,10 +356,12 @@ export default function App() {
 
         {/* Workspace */}
         <div className="flex-1 bg-[#E5E5E5] flex items-center justify-center p-8 relative overflow-hidden">
+           {/* Pattern Background */}
            <div className="absolute inset-0 opacity-5" style={{ backgroundImage: 'radial-gradient(#000 1px, transparent 1px)', backgroundSize: '20px 20px' }}></div>
 
            <div className="flex gap-8 items-start h-full max-h-[700px]">
               
+              {/* The Calendar Preview (Reference for Download) */}
               <div className="shadow-2xl rounded-sm overflow-hidden transform transition-transform duration-500 ease-out hover:scale-[1.01]">
                 <CalendarView 
                   ref={calendarRef}
@@ -448,31 +409,6 @@ export default function App() {
                     </div>
                  </div>
 
-                 {/* Magic Remix Control (New) */}
-                 {currentMonth.image && (
-                   <div className="bg-purple-50 p-3 rounded-lg border border-purple-100">
-                      <label className="text-[10px] uppercase font-bold text-purple-800 mb-2 flex items-center gap-1 tracking-widest">
-                         <SparklesIcon size={12} /> Magic Remix
-                      </label>
-                      <div className="flex gap-2">
-                        <input 
-                          type="text" 
-                          value={remixPrompt}
-                          onChange={(e) => setRemixPrompt(e.target.value)}
-                          placeholder="e.g. watercolor painting..."
-                          className="flex-1 text-xs p-2 rounded border border-purple-200 outline-none focus:border-purple-400 bg-white"
-                        />
-                        <button
-                          onClick={handleRemixImage}
-                          disabled={isRemixing || !remixPrompt}
-                          className="bg-purple-600 text-white rounded p-2 hover:bg-purple-700 disabled:opacity-50 transition-colors"
-                        >
-                           {isRemixing ? <MagicIcon className="animate-spin" size={14} /> : <MagicIcon size={14} />}
-                        </button>
-                      </div>
-                   </div>
-                 )}
-
                  {/* Filter Control */}
                  <div>
                     <label className="text-[10px] uppercase font-bold text-gray-400 mb-2 block tracking-widest">
@@ -486,6 +422,7 @@ export default function App() {
                        >
                          <div className="absolute inset-0 bg-gray-200 flex items-center justify-center text-[10px] font-bold text-gray-500">Normal</div>
                        </button>
+
                        {[
                          FilterType.RISO_VIOLET_MINT,
                          FilterType.RISO_RED_BLUE,
@@ -532,9 +469,18 @@ export default function App() {
                       className="w-full h-24 p-3 text-sm border border-gray-200 rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent outline-none resize-none bg-white font-serif"
                     />
                  </div>
+
+                 {/* Navigation Hint */}
+                 <div className="mt-auto pt-4 border-t border-gray-100 text-center">
+                    <p className="text-[10px] text-gray-400">
+                      Edit {currentMonth.name}'s details here. Changes reflect instantly.
+                    </p>
+                 </div>
               </div>
+
            </div>
         </div>
+
       </main>
     </div>
   );

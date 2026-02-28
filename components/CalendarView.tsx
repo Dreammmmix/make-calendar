@@ -9,10 +9,10 @@ interface CalendarViewProps {
 
 const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, theme, primaryColor }, ref) => {
   
-  // Helper to generate days for the specific month (Dummy year 2025)
+  // Helper to generate days for the specific month (Year 2026)
   const renderCalendarGrid = (monthIndex: number) => {
-    const daysInMonth = new Date(2025, monthIndex + 1, 0).getDate();
-    const startDay = new Date(2025, monthIndex, 1).getDay(); // 0 = Sun
+    const daysInMonth = new Date(2026, monthIndex + 1, 0).getDate();
+    const startDay = new Date(2026, monthIndex, 1).getDay(); // 0 = Sun
     
     const days = [];
     // Empty slots for start
@@ -22,7 +22,7 @@ const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, them
     // Days
     for (let d = 1; d <= daysInMonth; d++) {
       days.push(
-        <div key={d} className="h-8 w-8 flex items-center justify-center text-sm font-medium text-inherit opacity-90">
+        <div key={d} className="h-8 w-8 flex items-center justify-center text-sm font-medium text-inherit opacity-90 mx-auto">
           {d}
         </div>
       );
@@ -104,7 +104,7 @@ const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, them
           <div className="text-center">
             <h2 className="text-4xl font-serif tracking-widest uppercase mb-2">{data.name}</h2>
             {data.caption && (
-              <p className="text-xs font-sans text-gray-400 italic max-w-xs mx-auto leading-relaxed">
+              <p className="text-xs font-sans text-gray-400 max-w-xs mx-auto leading-relaxed">
                 "{data.caption}"
               </p>
             )}
@@ -120,7 +120,7 @@ const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, them
               {renderCalendarGrid(data.id)}
             </div>
           </div>
-          <div className="text-[10px] opacity-40 font-sans tracking-widest mt-4">2025</div>
+          <div className="text-[10px] opacity-40 font-sans tracking-widest mt-4">2026</div>
         </div>
       </div>
     );
@@ -159,9 +159,9 @@ const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, them
           </div>
           
           <div className="w-full">
-            <div className="flex justify-between border-b border-gray-300 pb-2 mb-4">
+            <div className="grid grid-cols-7 border-b border-gray-300 pb-2 mb-4 text-center">
                {weekDays.map(d => (
-                <div key={d} className="text-xs font-bold text-gray-400 w-8 text-center">{d}</div>
+                <div key={d} className="text-xs font-bold text-gray-400">{d}</div>
               ))}
             </div>
              <div className="grid grid-cols-7 gap-y-2 text-center text-charcoal">
@@ -183,7 +183,7 @@ const CalendarView = forwardRef<HTMLDivElement, CalendarViewProps>(({ data, them
       <div className="h-full border-4 border-charcoal flex flex-col z-10 relative" style={{ borderColor: primaryColor }}>
         <div className="h-16 flex items-center justify-between px-6 border-b-4 border-charcoal" style={{ borderColor: primaryColor }}>
            <h2 className="text-3xl font-bold font-sans uppercase tracking-tighter" style={{ color: primaryColor }}>{data.name}</h2>
-           <span className="text-xl font-bold text-gray-400">2025</span>
+           <span className="text-xl font-bold text-gray-400">2026</span>
         </div>
         
         <div className="flex-grow relative overflow-hidden" style={{ backgroundColor: paper }}>
